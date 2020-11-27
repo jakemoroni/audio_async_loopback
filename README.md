@@ -57,7 +57,7 @@ for 48 kHz and that the volume is set to 100%.
 
 - Compiling:
 
-  Just do: gcc -o test main.c iec_61937.c pcm_sink.c ac3_sink.c -lpulse-simple -lsamplerate -lpthread -lavutil -lavcodec -Wall -O3 -flto
+  Just do: gcc -o audio_async_loopback main.c iec_61937.c pcm_sink.c ac3_sink.c -lpulse-simple -lsamplerate -lpthread -lavutil -lavcodec -Wall -O3 -flto
 
 - Usage:
 
@@ -67,5 +67,7 @@ for 48 kHz and that the volume is set to 100%.
 NOTE: There are a lot of loose ends in this program. I made it for
       my own personal use. I'm sure there are bugs, but it works
       fine for me.
+      
+TODO: Add ability to pass target latency via an argument.
 
 
