@@ -56,6 +56,7 @@ struct iec_60958 {
     size_t non_61937_chunks;
     struct pcm_sink pcm_sink;
     struct ac3_sink ac3_sink;
+    uint32_t sink_latency_us;
 };
 
 /* Callback that is called from the IEC 61937 state machine
@@ -142,7 +143,7 @@ static void iec_60958_process(struct iec_60958 *inst,
             inst->non_61937_chunks = 0;
             inst->state = IEC_60958_STATE_61937;
 
-            ac3_sink_open(&inst->ac3_sink);
+            ac3_sink_open(&inst->ac3_sink, inst->sink_latency_us);
         } else {
             inst->non_61937_chunks++;
             if (inst->non_61937_chunks >= IEC_61937_DETECTION_WINDOW) {
@@ -150,7 +151,7 @@ static void iec_60958_process(struct iec_60958 *inst,
                        IEC_61937_DETECTION_WINDOW);
                 inst->state = IEC_60958_STATE_PCM;
 
-                pcm_sink_open(&inst->pcm_sink);
+                pcm_sink_open(&inst->pcm_sink, inst->sink_latency_us);
             }
         }
         break;
@@ -165,7 +166,7 @@ static void iec_60958_process(struct iec_60958 *inst,
             inst->non_61937_chunks = 0;
             inst->state = IEC_60958_STATE_61937;
 
-            ac3_sink_open(&inst->ac3_sink);
+            ac3_sink_open(&inst->ac3_sink, inst->sink_latency_us);
         } else {
             pcm_sink_process(&inst->pcm_sink, chunk);
         }
@@ -182,7 +183,7 @@ static void iec_60958_process(struct iec_60958 *inst,
                 inst->state = IEC_60958_STATE_PCM;
 
                 ac3_sink_close(&inst->ac3_sink);
-                pcm_sink_open(&inst->pcm_sink);
+                pcm_sink_open(&inst->pcm_sink, inst->sink_latency_us);
             }
         }
         break;
@@ -209,8 +210,9 @@ int main(int argc, char*argv[])
     };
 
     if (argc < 2) {
-        printf("Usage: audio_async_loopback [input name]\n");
+        printf("Usage: audio_async_loopback [input name] [latency microsec]\n");
         printf("       Get input name via: pactl list sources\n");
+        printf("       Latency is optional\n");
         return EXIT_FAILURE;
     }
 
@@ -234,6 +236,14 @@ int main(int argc, char*argv[])
 
     /* Open IEC 60958 handler. */
     iec_60958_init(&iec_60958_inst);
+
+    iec_60958_inst.sink_latency_us = 0;
+    if (argc == 3) {
+        iec_60958_inst.sink_latency_us = atoi(argv[2]);
+        if (iec_60958_inst.sink_latency_us == 0) {
+            printf("Invalid sink latency, using default\n");
+        }
+    }
 
     /* Get sample chunks and process. */
     while (1) {

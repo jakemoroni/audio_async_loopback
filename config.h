@@ -81,7 +81,7 @@
  * to maintain a buffer level, systems with high scheduling
  * jitter can still underrun/overflow the buffer.
  */
-#define PCM_SINK_PA_BUFFER_SIZE        2048u /* 2.6 milliseconds */
+#define PCM_SINK_PA_BUFFER_SIZE        2048u /* 5.3 milliseconds */
 
 /* See comment above about the PCM sink. Note that this is
  * 6 times larger than the PCM value divided by two.

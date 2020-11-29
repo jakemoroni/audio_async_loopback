@@ -58,7 +58,7 @@ struct ac3_sink {
     AVFrame *frame;
 };
 
-void ac3_sink_open(struct ac3_sink *inst);
+void ac3_sink_open(struct ac3_sink *inst, uint32_t latency_us);
 
 void ac3_sink_close(struct ac3_sink *inst);
 

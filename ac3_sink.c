@@ -108,11 +108,33 @@ static double calculate_rate_ratio(struct ac3_sink *inst)
     return ((mult * offset) + 1.0);
 }
 
+/* Get the Pulseaudio buffer size required to achieve the
+ * requested latency.
+ */
+static uint32_t calculate_pa_buf_size(struct ac3_sink *inst,
+                                      uint32_t latency_us)
+{
+    const double latency_seconds = ((double)latency_us / 1000000.0);
+    const double latency_samples = latency_seconds / (1.0 / 48000.0);
+    /* Six channels, 4 byte samples. */
+    const uint32_t bytes = latency_samples * 4u * 6u;
+
+    if (!latency_us || (bytes < AC3_SINK_PA_BUFFER_SIZE)) {
+        printf("Using default sink buffer size of %d bytes\n", AC3_SINK_PA_BUFFER_SIZE);
+        return AC3_SINK_PA_BUFFER_SIZE;
+    }
+
+    printf("PA buffer size = %d bytes\n", bytes);
+
+    return bytes;
+}
+
 /* Open the ac3 sink. */
-void ac3_sink_open(struct ac3_sink *inst)
+void ac3_sink_open(struct ac3_sink *inst, uint32_t latency_us)
 {
     size_t i;
     int error;
+    uint32_t bufsize;
     pa_buffer_attr attr;
 
     static const pa_sample_spec pa_ss = {
@@ -174,11 +196,13 @@ void ac3_sink_open(struct ac3_sink *inst)
     }
 
     /* Configure buffer for low latency. */
-    attr.maxlength = AC3_SINK_PA_BUFFER_SIZE;
-    attr.tlength = AC3_SINK_PA_BUFFER_SIZE;
-    attr.prebuf = AC3_SINK_PA_BUFFER_SIZE;
+    bufsize = calculate_pa_buf_size(inst, latency_us);
+    attr.maxlength = bufsize;
+    attr.tlength = bufsize;
+    attr.prebuf = bufsize;
     attr.minreq = 8;
     attr.fragsize = -1;
+
 
     /* Open simple pulseaudio context. */
     inst->pa_inst = pa_simple_new(NULL,

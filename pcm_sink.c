@@ -112,10 +112,32 @@ static double calculate_rate_ratio(struct pcm_sink *inst)
     return ((mult * offset) + 1.0);
 }
 
+/* Get the Pulseaudio buffer size required to achieve the
+ * requested latency.
+ */
+static uint32_t calculate_pa_buf_size(struct pcm_sink *inst,
+                                      uint32_t latency_us)
+{
+    const double latency_seconds = ((double)latency_us / 1000000.0);
+    const double latency_samples = latency_seconds / (1.0 / 48000.0);
+    /* Two channels, 4 byte samples. */
+    const uint32_t bytes = latency_samples * 4u * 2u;
+
+    if (!latency_us || (bytes < PCM_SINK_PA_BUFFER_SIZE)) {
+        printf("Using default sink buffer size of %d bytes\n", PCM_SINK_PA_BUFFER_SIZE);
+        return PCM_SINK_PA_BUFFER_SIZE;
+    }
+
+    printf("PA buffer size = %d bytes\n", bytes);
+
+    return bytes;
+}
+
 /* Open the PCM sink. */
-void pcm_sink_open(struct pcm_sink *inst)
+void pcm_sink_open(struct pcm_sink *inst, uint32_t latency_us)
 {
     int error;
+    uint32_t bufsize;
     pa_buffer_attr attr;
 
     static const pa_sample_spec pa_ss = {
@@ -136,9 +158,10 @@ void pcm_sink_open(struct pcm_sink *inst)
     }
 
     /* Configure buffer for low latency. */
-    attr.maxlength = PCM_SINK_PA_BUFFER_SIZE;
-    attr.tlength = PCM_SINK_PA_BUFFER_SIZE;
-    attr.prebuf = PCM_SINK_PA_BUFFER_SIZE;
+    bufsize = calculate_pa_buf_size(inst, latency_us);
+    attr.maxlength = bufsize;
+    attr.tlength = bufsize;
+    attr.prebuf = bufsize;
     attr.minreq = 8;
     attr.fragsize = -1;
 

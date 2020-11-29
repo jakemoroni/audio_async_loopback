@@ -56,7 +56,7 @@ struct pcm_sink {
     SRC_DATA src_data;
 };
 
-void pcm_sink_open(struct pcm_sink *inst);
+void pcm_sink_open(struct pcm_sink *inst, uint32_t latency_us);
 
 void pcm_sink_close(struct pcm_sink *inst);
 
