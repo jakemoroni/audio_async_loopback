@@ -41,13 +41,22 @@
  */
 #define IEC_61937_DETECTION_WINDOW     64u
 
+/* Buffer level measurement averaging depth.
+ * This is used to smooth out some of the jitter that
+ * occurs when the buffer utilization is measured.
+ * This also has side effects on overall loop stability,
+ * so proceed with caution.
+ * Must be a power of 2.
+ */
+#define PCM_SINK_BUFFER_HIST_SIZE      512u
+
 /* Proportional gain for PCM sink buffer utilization
  * control loop. The max sampling rate ratio is:
  * (PCM_SINK_BUFFER_TARGET_SAMPLES * PCM_SINK_LOOP_GAIN) + 1.
  * This is kept low enough to limit the max ratio to something
  * that won't result in audible pitch changes.
  */
-#define PCM_SINK_LOOP_GAIN             0.000004
+#define PCM_SINK_LOOP_GAIN             0.000002
 
 /* Number of samples to aim to keep in the buffer right before
  * the next chunk is added (so, the minimim utilization).
@@ -93,14 +102,20 @@
 /* Same as PCM sink, but adjusted for 6 channels. */
 #define AC3_SINK_PA_BUFFER_SIZE        6144u
 
+/* See comment above regarding PCM. Note that this is
+ * much smaller because AC3 frames arrive at a much lower
+ * rate than PCM chunks, so in order to keep the loop
+ * characteristics similar, this had to be reduced.
+ */
+#define AC3_SINK_BUFFER_HIST_SIZE      128u
 
 /* This is just like the PCM sink, but scaled to compensate
  * for 6 channels worth of samples.
  */
-#define AC3_SINK_LOOP_GAIN             0.0000013334
+#define AC3_SINK_LOOP_GAIN             0.0000006666666666666
 
 /* See PCM comments above. */
-#define AC3_BUFFER_TARGET_SAMPLES      384
+#define AC3_SINK_BUFFER_TARGET_SAMPLES     384
 
 /* See PCM comments above. */
 #define AC3_SINK_SAMPLE_BUFFER_SIZE        32768u

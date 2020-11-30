@@ -56,6 +56,10 @@ struct ac3_sink {
     AVCodecContext *cctx;
     AVPacket packet;
     AVFrame *frame;
+
+    int32_t history[AC3_SINK_BUFFER_HIST_SIZE];
+    uint32_t histidx;
+    int32_t average; /* Informational only */
 };
 
 void ac3_sink_open(struct ac3_sink *inst, uint32_t latency_us);

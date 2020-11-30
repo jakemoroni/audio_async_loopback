@@ -96,6 +96,8 @@ static void *output_thread(void *arg)
  */
 static double calculate_rate_ratio(struct pcm_sink *inst)
 {
+    size_t i;
+    double accum;
     const int32_t tmp = buffer_used(inst);
     const double mult = PCM_SINK_LOOP_GAIN;
     int32_t offset = PCM_SINK_BUFFER_TARGET_SAMPLES - tmp;
@@ -109,7 +111,19 @@ static double calculate_rate_ratio(struct pcm_sink *inst)
         offset = PCM_SINK_BUFFER_TARGET_SAMPLES;
     }
 
-    return ((mult * offset) + 1.0);
+    inst->history[inst->histidx] = offset;
+    inst->histidx++;
+    inst->histidx &= (PCM_SINK_BUFFER_HIST_SIZE - 1u);
+
+    accum = 0;
+    for (i = 0; i < PCM_SINK_BUFFER_HIST_SIZE; i++) {
+        accum += inst->history[i];
+    }
+    accum /= PCM_SINK_BUFFER_HIST_SIZE;
+
+    inst->average = accum;
+
+    return ((mult * accum) + 1.0);
 }
 
 /* Get the Pulseaudio buffer size required to achieve the
@@ -264,7 +278,7 @@ void pcm_sink_process(struct pcm_sink *inst, uint8_t *data)
     inst->src_data.src_ratio = calculate_rate_ratio(inst);
 
 #ifdef DEBUG
-    printf("Buffer: %04d    Ratio: %f\n", buffer_used(inst), inst->src_data.src_ratio);
+    printf("Buffer: %04d    Ratio: %f    Avg: %d\n", buffer_used(inst), inst->src_data.src_ratio, inst->average);
 #endif
 
     /* First, figure out how many samples we can queue.

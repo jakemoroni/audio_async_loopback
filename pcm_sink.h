@@ -54,6 +54,10 @@ struct pcm_sink {
     uint32_t write_idx;
 
     SRC_DATA src_data;
+
+    int32_t history[PCM_SINK_BUFFER_HIST_SIZE];
+    uint32_t histidx;
+    int32_t average; /* Informational only */
 };
 
 void pcm_sink_open(struct pcm_sink *inst, uint32_t latency_us);
