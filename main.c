@@ -198,7 +198,7 @@ int main(int argc, char*argv[])
     int error;
     pa_simple *pa_inst;
     struct iec_60958 iec_60958_inst;
-
+    pa_buffer_attr attr;
     /* Keep the buffer in the BSS. */
     static uint8_t buffer[INPUT_CHUNK_SIZE];
 
@@ -219,6 +219,13 @@ int main(int argc, char*argv[])
     /* Initialize libavcodec. */
     avcodec_register_all();
 
+    /* Configure input buffer for low latency. */
+    attr.maxlength = -1;
+    attr.tlength = -1;
+    attr.prebuf = -1;
+    attr.minreq = -1;
+    attr.fragsize = INPUT_CHUNK_SIZE;
+
     /* Open simple pulseaudio context. */
     pa_inst = pa_simple_new(NULL,
                             PROGRAM_NAME_STR,
@@ -227,7 +234,7 @@ int main(int argc, char*argv[])
                             "Audio Async Loopback",
                             &pa_ss,
                             NULL,
-                            NULL,
+                            &attr,
                             &error);
     if (!pa_inst) {
         printf("Could not open pulseaudio context (error = %d)\n", error);

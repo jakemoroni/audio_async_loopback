@@ -162,6 +162,9 @@ void pcm_sink_open(struct pcm_sink *inst, uint32_t latency_us)
 
     memset(inst, 0, sizeof(struct pcm_sink));
 
+    /* Initialize buffer to be at the target. This provides a better starting point for the loop. */
+    inst->write_idx = PCM_SINK_BUFFER_TARGET_SAMPLES;
+
     pthread_mutex_init(&inst->lock, NULL);
     pthread_cond_init(&inst->cond, NULL);
 

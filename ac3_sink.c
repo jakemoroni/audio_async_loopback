@@ -174,6 +174,9 @@ void ac3_sink_open(struct ac3_sink *inst, uint32_t latency_us)
 
     memset(inst, 0, sizeof(struct ac3_sink));
 
+    /* Initialize buffer to be at the target. This provides a better starting point for the loop. */
+    inst->write_idx = AC3_SINK_BUFFER_TARGET_SAMPLES;
+
     pthread_mutex_init(&inst->lock, NULL);
     pthread_cond_init(&inst->cond, NULL);
 

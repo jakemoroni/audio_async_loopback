@@ -57,17 +57,19 @@ for 48 kHz and that the volume is set to 100%.
 
 - Compiling:
 
+  You may need to install libsamplerate0-dev, libpulse-dev, libavcodec-dev first, then:
   Just do: gcc -o audio_async_loopback main.c iec_61937.c pcm_sink.c ac3_sink.c -lpulse-simple -lsamplerate -lpthread -lavutil -lavcodec -Wall -O3 -flto
 
 - Usage:
 
   Invoke the program with the argument being the name of your input.
   Use "pactl list sources" to get a list of inputs.
+  
+  If you encounter discontinuities in the audio, you can specify an
+  optional third argument to the program, which will be the sink
+  latency in microseconds. Try setting it to something like 50000.
 
 NOTE: There are a lot of loose ends in this program. I made it for
       my own personal use. I'm sure there are bugs, but it works
       fine for me.
-      
-TODO: Add ability to pass target latency via an argument.
-
 
