@@ -35,15 +35,13 @@
 #include "config.h"
 
 /* Returns the number of space available, in samples. */
-static uint32_t buffer_space_avail(struct pcm_sink *inst)
-{
+static uint32_t buffer_space_avail(struct pcm_sink *inst) {
     return (PCM_SINK_SAMPLE_BUFFER_SIZE_MASK -
             ((inst->write_idx - inst->read_idx) & PCM_SINK_SAMPLE_BUFFER_SIZE_MASK));
 }
 
 /* Returns the current buffer utilization, in samples. */
-static uint32_t buffer_used(struct pcm_sink *inst)
-{
+static uint32_t buffer_used(struct pcm_sink *inst) {
     return ((inst->write_idx - inst->read_idx) & PCM_SINK_SAMPLE_BUFFER_SIZE_MASK);
 }
 
@@ -51,12 +49,11 @@ static uint32_t buffer_used(struct pcm_sink *inst)
  * the Pulseaudio stream in units of PCM_SINK_OUTPUT_CHUNK_SIZE
  * samples.
  */
-static void *output_thread(void *arg)
-{
+static void *output_thread(void *arg) {
     int error;
     uint32_t i;
     float tmp[PCM_SINK_OUTPUT_CHUNK_SIZE];
-    struct pcm_sink *inst = (struct pcm_sink *)arg;
+    struct pcm_sink *inst = (struct pcm_sink *) arg;
 
     while (1) {
         pthread_mutex_lock(&inst->lock);
@@ -94,8 +91,7 @@ static void *output_thread(void *arg)
  * before adding a new chunk to the ring buffer, and must be
  * called with the lock held.
  */
-static double calculate_rate_ratio(struct pcm_sink *inst)
-{
+static double calculate_rate_ratio(struct pcm_sink *inst) {
     size_t i;
     double accum;
     const int32_t tmp = buffer_used(inst);
@@ -130,9 +126,8 @@ static double calculate_rate_ratio(struct pcm_sink *inst)
  * requested latency.
  */
 static uint32_t calculate_pa_buf_size(struct pcm_sink *inst,
-                                      uint32_t latency_us)
-{
-    const double latency_seconds = ((double)latency_us / 1000000.0);
+                                      uint32_t latency_us) {
+    const double latency_seconds = ((double) latency_us / 1000000.0);
     const double latency_samples = latency_seconds / (1.0 / 48000.0);
     /* Two channels, 4 byte samples. */
     const uint32_t bytes = latency_samples * 4u * 2u;
@@ -148,16 +143,15 @@ static uint32_t calculate_pa_buf_size(struct pcm_sink *inst,
 }
 
 /* Open the PCM sink. */
-void pcm_sink_open(struct pcm_sink *inst, uint32_t latency_us)
-{
+void pcm_sink_open(struct pcm_sink *inst, uint32_t latency_us) {
     int error;
     uint32_t bufsize;
     pa_buffer_attr attr;
 
     static const pa_sample_spec pa_ss = {
-        .format = PA_SAMPLE_FLOAT32LE,
-        .rate = 48000,
-        .channels = 2
+            .format = PA_SAMPLE_FLOAT32LE,
+            .rate = 48000,
+            .channels = 2
     };
 
     memset(inst, 0, sizeof(struct pcm_sink));
@@ -182,6 +176,8 @@ void pcm_sink_open(struct pcm_sink *inst, uint32_t latency_us)
     attr.minreq = 8;
     attr.fragsize = -1;
 
+    pa_channel_map channel_map;
+
     /* Open simple pulseaudio context. */
     inst->pa_inst = pa_simple_new(NULL,
                                   PROGRAM_NAME_STR,
@@ -189,7 +185,11 @@ void pcm_sink_open(struct pcm_sink *inst, uint32_t latency_us)
                                   NULL,
                                   "Audio Async Loopback",
                                   &pa_ss,
+#if PCM_PREFER_STEREO
+                                  pa_channel_map_init_stereo(&channel_map),
+#else
                                   NULL,
+#endif
                                   &attr,
                                   &error);
     if (!inst->pa_inst) {
@@ -214,8 +214,7 @@ void pcm_sink_open(struct pcm_sink *inst, uint32_t latency_us)
 }
 
 /* Close the PCM sink. */
-void pcm_sink_close(struct pcm_sink *inst)
-{
+void pcm_sink_close(struct pcm_sink *inst) {
     int error;
 
     /* Kill the thread. */
@@ -237,8 +236,7 @@ void pcm_sink_close(struct pcm_sink *inst)
  * to the sink. There's no length argument because this sub-module
  * relies on the top level chunk size anyway...
  */
-void pcm_sink_process(struct pcm_sink *inst, uint8_t *data)
-{
+void pcm_sink_process(struct pcm_sink *inst, uint8_t *data) {
     int error;
     uint32_t can_queue;
     uint32_t will_queue;
@@ -273,7 +271,7 @@ void pcm_sink_process(struct pcm_sink *inst, uint8_t *data)
 
     /* Resample. */
     if ((error = src_process(inst->rate_converter, &inst->src_data))) {
-        printf("PCM sink rate converter error %s\n",  src_strerror(error));
+        printf("PCM sink rate converter error %s\n", src_strerror(error));
     }
 
     pthread_mutex_lock(&inst->lock);

@@ -31,15 +31,13 @@
 #include "config.h"
 
 /* Returns the number of space available, in samples. */
-static uint32_t buffer_space_avail(struct ac3_sink *inst)
-{
+static uint32_t buffer_space_avail(struct ac3_sink *inst) {
     return (AC3_SINK_SAMPLE_BUFFER_SIZE_MASK -
             ((inst->write_idx - inst->read_idx) & AC3_SINK_SAMPLE_BUFFER_SIZE_MASK));
 }
 
 /* Returns the current buffer utilization, in samples. */
-static uint32_t buffer_used(struct ac3_sink *inst)
-{
+static uint32_t buffer_used(struct ac3_sink *inst) {
     return ((inst->write_idx - inst->read_idx) & AC3_SINK_SAMPLE_BUFFER_SIZE_MASK);
 }
 
@@ -47,12 +45,11 @@ static uint32_t buffer_used(struct ac3_sink *inst)
  * the Pulseaudio stream in units of AC3_SINK_OUTPUT_CHUNK_SIZE
  * samples.
  */
-static void *output_thread(void *arg)
-{
+static void *output_thread(void *arg) {
     int error;
     uint32_t i;
     float tmp[AC3_SINK_OUTPUT_CHUNK_SIZE];
-    struct ac3_sink *inst = (struct ac3_sink *)arg;
+    struct ac3_sink *inst = (struct ac3_sink *) arg;
 
     while (1) {
         pthread_mutex_lock(&inst->lock);
@@ -90,8 +87,7 @@ static void *output_thread(void *arg)
  * before adding a new chunk to the ring buffer, and must be
  * called with the lock held.
  */
-static double calculate_rate_ratio(struct ac3_sink *inst)
-{
+static double calculate_rate_ratio(struct ac3_sink *inst) {
     size_t i;
     double accum;
     const int32_t tmp = buffer_used(inst);
@@ -126,9 +122,8 @@ static double calculate_rate_ratio(struct ac3_sink *inst)
  * requested latency.
  */
 static uint32_t calculate_pa_buf_size(struct ac3_sink *inst,
-                                      uint32_t latency_us)
-{
-    const double latency_seconds = ((double)latency_us / 1000000.0);
+                                      uint32_t latency_us) {
+    const double latency_seconds = ((double) latency_us / 1000000.0);
     const double latency_samples = latency_seconds / (1.0 / 48000.0);
     /* Six channels, 4 byte samples. */
     const uint32_t bytes = latency_samples * 4u * 6u;
@@ -144,33 +139,38 @@ static uint32_t calculate_pa_buf_size(struct ac3_sink *inst,
 }
 
 /* Open the ac3 sink. */
-void ac3_sink_open(struct ac3_sink *inst, uint32_t latency_us)
-{
+void ac3_sink_open(struct ac3_sink *inst, uint32_t latency_us) {
     size_t i;
     int error;
     uint32_t bufsize;
     pa_buffer_attr attr;
 
-    static const pa_sample_spec pa_ss = {
-        .format = PA_SAMPLE_FLOAT32LE,
-        .rate = 48000,
-        .channels = 6
+    static pa_sample_spec pa_ss = {
+            .format = PA_SAMPLE_FLOAT32LE,
+            .rate = 48000
     };
 
-    static const pa_channel_map channel_map = {
-        .channels = 6,
-        .map[0] = PA_CHANNEL_POSITION_FRONT_LEFT,
-        .map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT,
-        .map[2] = PA_CHANNEL_POSITION_FRONT_CENTER,
-        .map[3] = PA_CHANNEL_POSITION_LFE,
-#ifdef USE_AC3_SURROUND_MAPPING
-        .map[4] = PA_CHANNEL_POSITION_SIDE_LEFT,
-        .map[5] = PA_CHANNEL_POSITION_SIDE_RIGHT,
+    static pa_channel_map channel_map;
+#if PCM_PREFER_STEREO
+    pa_ss.channels = 2;
+    channel_map.channels = 2;
+    channel_map.map[0] = PA_CHANNEL_POSITION_LEFT;
+    channel_map.map[1] = PA_CHANNEL_POSITION_RIGHT;
 #else
-        .map[4] = PA_CHANNEL_POSITION_REAR_LEFT,
-        .map[5] = PA_CHANNEL_POSITION_REAR_RIGHT,
+    pa_ss.channels = 6;
+    channel_map.channels = 6;
+    channel_map.map[0] = PA_CHANNEL_POSITION_FRONT_LEFT;
+    channel_map.map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT;
+    channel_map.map[2] = PA_CHANNEL_POSITION_FRONT_CENTER;
+    channel_map.map[3] = PA_CHANNEL_POSITION_LFE;
+#ifdef USE_AC3_SURROUND_MAPPING
+    channel_map.map[4] = PA_CHANNEL_POSITION_SIDE_LEFT;
+    channel_map.map[5] = PA_CHANNEL_POSITION_SIDE_RIGHT;
+#else
+    channel_map.map[4] = PA_CHANNEL_POSITION_REAR_LEFT;
+    channel_map.map[5] = PA_CHANNEL_POSITION_REAR_RIGHT;
 #endif
-    };
+#endif
 
     memset(inst, 0, sizeof(struct ac3_sink));
 
@@ -249,8 +249,7 @@ void ac3_sink_open(struct ac3_sink *inst, uint32_t latency_us)
 }
 
 /* Close the ac3 sink. */
-void ac3_sink_close(struct ac3_sink *inst)
-{
+void ac3_sink_close(struct ac3_sink *inst) {
     size_t i;
     int error;
 
@@ -279,8 +278,7 @@ void ac3_sink_close(struct ac3_sink *inst)
  * to the sink. There's no length argument because this sub-module
  * relies on the top level chunk size anyway...
  */
-void ac3_sink_process(struct ac3_sink *inst, uint8_t *data, size_t len)
-{
+void ac3_sink_process(struct ac3_sink *inst, uint8_t *data, size_t len) {
     size_t i;
     int error;
     int got_one;
@@ -312,13 +310,13 @@ void ac3_sink_process(struct ac3_sink *inst, uint8_t *data, size_t len)
 
     /* Resample each channel. */
     for (i = 0; i < AC3_SINK_NUM_CHANNELS; i++) {
-        inst->src_data.data_in = (float *)inst->frame->data[i];
+        inst->src_data.data_in = (float *) inst->frame->data[i];
         inst->src_data.data_out = inst->tmp_output_buf[i];
         inst->src_data.input_frames = inst->frame->nb_samples;
 
         /* Resample. */
         if ((error = src_process(inst->rate_converter[i], &inst->src_data))) {
-            printf("AC3 sink rate converter error %s\n",  src_strerror(error));
+            printf("AC3 sink rate converter error %s\n", src_strerror(error));
         }
     }
 
@@ -338,11 +336,11 @@ void ac3_sink_process(struct ac3_sink *inst, uint8_t *data, size_t len)
     can_queue = buffer_space_avail(inst);
 
     if (can_queue < (inst->src_data.output_frames_gen * 6)) {
-       printf("Can't fit entire frame, so dropping entire frame (%d < %lu)\n",
-              can_queue,
-              inst->src_data.output_frames_gen * 6);
-       pthread_mutex_unlock(&inst->lock);
-       return;
+        printf("Can't fit entire frame, so dropping entire frame (%d < %lu)\n",
+               can_queue,
+               inst->src_data.output_frames_gen * 6);
+        pthread_mutex_unlock(&inst->lock);
+        return;
     }
 
     /* Copy into ring buffer, observing the channel mapping. */

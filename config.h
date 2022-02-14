@@ -121,5 +121,10 @@
 #define AC3_SINK_SAMPLE_BUFFER_SIZE        32768u
 #define AC3_SINK_SAMPLE_BUFFER_SIZE_MASK   (AC3_SINK_SAMPLE_BUFFER_SIZE - 1u)
 
+/* Option to allow PulseAudio to find default device. */
+#define PULSE_ALLOW_DEFAULT_DEVICE         1
+
+/* Prefer stereo mapping. */
+#define PCM_PREFER_STEREO                  1
 
 #endif /* _CONFIG_H_ */

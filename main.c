@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <sys/wait.h>
 #include <pulse/simple.h>
+#include <pulse/channelmap.h>
 #include <pulse/error.h>
 #include <libavcodec/avcodec.h>
 
@@ -209,12 +210,14 @@ int main(int argc, char*argv[])
         .channels = 2
     };
 
+#if !PULSE_ALLOW_DEFAULT_DEVICE
     if (argc < 2) {
         printf("Usage: audio_async_loopback [input name] [latency microsec]\n");
         printf("       Get input name via: pactl list sources\n");
         printf("       Latency is optional\n");
         return EXIT_FAILURE;
     }
+#endif
 
     /* Initialize libavcodec. */
     avcodec_register_all();
@@ -230,7 +233,11 @@ int main(int argc, char*argv[])
     pa_inst = pa_simple_new(NULL,
                             PROGRAM_NAME_STR,
                             PA_STREAM_RECORD,
+#if PULSE_ALLOW_DEFAULT_DEVICE
+                            NULL,
+#else
                             argv[1],
+#endif
                             "Audio Async Loopback",
                             &pa_ss,
                             NULL,
