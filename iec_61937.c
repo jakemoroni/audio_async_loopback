@@ -49,13 +49,9 @@ void iec_61937_fsm_init(struct iec_61937_fsm *inst,
 }
 
 /* Process a single sample. Returns true if locked on to a valid 61937 stream. */
-bool iec_61937_fsm_run(struct iec_61937_fsm *inst, uint16_t s16le_sample)
+bool iec_61937_fsm_run(struct iec_61937_fsm *inst, uint16_t sample)
 {
-    bool ret;
-    uint16_t sample;
-
-    ret = false;
-    sample = __builtin_bswap16(s16le_sample);
+    bool ret = false;
 
     switch (inst->state) {
     case IEC_61937_STATE_FIRST_0:
