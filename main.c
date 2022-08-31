@@ -102,8 +102,7 @@ static bool process_chunk_iec_61937(struct iec_61937_fsm *inst,
 
     for (i = 0; i < chunk_size; i += 2) {
         sample = chunk[i];
-        sample <<= 8u;
-        sample |= chunk[i + 1];
+        sample |= chunk[i + 1] << 8u;
 
         if (iec_61937_fsm_run(inst, sample)) {
             ret = true;
