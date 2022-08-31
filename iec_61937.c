@@ -32,7 +32,7 @@
 /* Burst header sync words. */
 #define IEC_61937_SYNC_WORD_0          0xF872
 #define IEC_61937_SYNC_WORD_1          0x4E1F
-#define IEC_61937_DATA_TYPE_MASK       0x3F
+#define IEC_61937_DATA_TYPE_MASK       0x7F
 
 /* Initialize the state machine. */
 void iec_61937_fsm_init(struct iec_61937_fsm *inst,
