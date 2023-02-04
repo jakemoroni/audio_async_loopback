@@ -21,9 +21,12 @@
 #define PROGRAM_NAME_STR               "audio_async_loopback"
 //#define DEBUG                          1
 
+/* Use the old FFMPEG AC3 decoding API (for Ubuntu 16.04). */
+/* #define FFMPEG_OLD_AUDIO_API           1 */
+
 /* When Pulseaudio is configured for 4 channels (surround 4.0), the
  * sink ends up with Front Left, Front Right, Rear Left, Rear Right.
- * However, AC3 calls the rear channels "side". If the AC3 mapping
+ * However, AC3 considers the rear channels "side". If the AC3 mapping
  * is used, no audio will come from the rear channels.
  * So, when this is undefined, the AC3 "side" channels get mapped
  * to the sink "rear" channels.

@@ -283,12 +283,15 @@ void ac3_sink_process(struct ac3_sink *inst, uint8_t *data, size_t len)
 {
     size_t i;
     int error;
+#ifdef FFMPEG_OLD_AUDIO_API
     int got_one;
+#endif
     uint32_t can_queue;
 
     inst->packet.data = data;
     inst->packet.size = len;
 
+#ifdef FFMPEG_OLD_AUDIO_API
     error = avcodec_decode_audio4(inst->cctx, inst->frame, &got_one, &inst->packet);
     if (error < 0) {
         printf("Error decoding AC3 frame\n");
@@ -299,6 +302,33 @@ void ac3_sink_process(struct ac3_sink *inst, uint8_t *data, size_t len)
         printf("No AC3 frame was decoded\n");
         return;
     }
+#else
+    /* Submit. */
+    error = avcodec_send_packet(inst->cctx, &inst->packet);
+    if (error == AVERROR(EAGAIN)) {
+        /* From the doc: Input is not accepted in the current state - user
+         * must read output with avcodec_receive_frame().
+         */
+        printf("avcodec_send_packet returned EAGAIN - discarding frames...\n");
+        while (!avcodec_receive_frame(inst->cctx, inst->frame)) {
+            /* Just drop all frames until the decoder is ready to accept new input.
+             * We will pick back up on the next frame.
+             */
+        }
+        return;
+    } else if (error < 0) {
+        /* Decoding failed. */
+        printf("Error decoding AC3 frame\n");
+        return;
+    }
+
+    /* Pull out the decoded frame. */
+    error = avcodec_receive_frame(inst->cctx, inst->frame);
+    if (error) {
+        printf("No AC3 frame was decoded\n");
+        return;
+    }
+#endif
 
     if (inst->frame->channels != 6) {
         /* Only 5.1 is supported for now. This is mainly because I don't
