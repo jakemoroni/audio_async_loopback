@@ -216,8 +216,12 @@ int main(int argc, char*argv[])
         return EXIT_FAILURE;
     }
 
+    #ifdef FFMPEG_OLD_AUDIO_API
+    
     /* Initialize libavcodec. */
     avcodec_register_all();
+    
+    #endif
 
     /* Configure input buffer for low latency. */
     attr.maxlength = -1;
