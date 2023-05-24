@@ -209,6 +209,12 @@ int main(int argc, char*argv[])
         .channels = 2
     };
 
+    static const pa_channel_map channel_map = {
+        .channels = 2,
+        .map[0] = PA_CHANNEL_POSITION_FRONT_LEFT,
+        .map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT,
+    };
+
     if (argc < 2) {
         printf("Usage: audio_async_loopback [input name] [latency microsec]\n");
         printf("       Get input name via: pactl list sources\n");
@@ -216,12 +222,12 @@ int main(int argc, char*argv[])
         return EXIT_FAILURE;
     }
 
-    #ifdef FFMPEG_OLD_AUDIO_API
+#ifdef FFMPEG_OLD_AUDIO_API
     
     /* Initialize libavcodec. */
     avcodec_register_all();
     
-    #endif
+#endif
 
     /* Configure input buffer for low latency. */
     attr.maxlength = -1;
@@ -237,7 +243,7 @@ int main(int argc, char*argv[])
                             argv[1],
                             "Audio Async Loopback",
                             &pa_ss,
-                            NULL,
+                            &channel_map,
                             &attr,
                             &error);
     if (!pa_inst) {

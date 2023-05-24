@@ -160,6 +160,12 @@ void pcm_sink_open(struct pcm_sink *inst, uint32_t latency_us)
         .channels = 2
     };
 
+    static const pa_channel_map channel_map = {
+        .channels = 2,
+        .map[0] = PA_CHANNEL_POSITION_FRONT_LEFT,
+        .map[1] = PA_CHANNEL_POSITION_FRONT_RIGHT,
+    };
+
     memset(inst, 0, sizeof(struct pcm_sink));
 
     /* Initialize buffer to be at the target. This provides a better starting point for the loop. */
@@ -189,7 +195,7 @@ void pcm_sink_open(struct pcm_sink *inst, uint32_t latency_us)
                                   NULL,
                                   "Audio Async Loopback",
                                   &pa_ss,
-                                  NULL,
+                                  &channel_map,
                                   &attr,
                                   &error);
     if (!inst->pa_inst) {

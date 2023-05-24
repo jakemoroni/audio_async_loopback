@@ -52,9 +52,9 @@ struct ac3_sink {
 
     SRC_DATA src_data;
 
-    AVCodec *codec;
+    const AVCodec *codec;
     AVCodecContext *cctx;
-    AVPacket packet;
+    AVPacket *packet;
     AVFrame *frame;
 
     int32_t history[AC3_SINK_BUFFER_HIST_SIZE];

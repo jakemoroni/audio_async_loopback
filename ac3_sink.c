@@ -181,7 +181,7 @@ void ac3_sink_open(struct ac3_sink *inst, uint32_t latency_us)
     pthread_cond_init(&inst->cond, NULL);
 
     /* Open decoder context. */
-    av_init_packet(&inst->packet);
+    inst->packet = av_packet_alloc();
     inst->frame = av_frame_alloc();
 
     /* TODO - Handle all of these failure cases. */
@@ -288,11 +288,11 @@ void ac3_sink_process(struct ac3_sink *inst, uint8_t *data, size_t len)
 #endif
     uint32_t can_queue;
 
-    inst->packet.data = data;
-    inst->packet.size = len;
+    inst->packet->data = data;
+    inst->packet->size = len;
 
 #ifdef FFMPEG_OLD_AUDIO_API
-    error = avcodec_decode_audio4(inst->cctx, inst->frame, &got_one, &inst->packet);
+    error = avcodec_decode_audio4(inst->cctx, inst->frame, &got_one, inst->packet);
     if (error < 0) {
         printf("Error decoding AC3 frame\n");
         return;
@@ -304,7 +304,7 @@ void ac3_sink_process(struct ac3_sink *inst, uint8_t *data, size_t len)
     }
 #else
     /* Submit. */
-    error = avcodec_send_packet(inst->cctx, &inst->packet);
+    error = avcodec_send_packet(inst->cctx, inst->packet);
     if (error == AVERROR(EAGAIN)) {
         /* From the doc: Input is not accepted in the current state - user
          * must read output with avcodec_receive_frame().
