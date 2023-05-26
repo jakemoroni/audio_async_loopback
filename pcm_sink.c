@@ -37,14 +37,13 @@
 /* Returns the number of space available, in samples. */
 static uint32_t buffer_space_avail(struct pcm_sink *inst)
 {
-    return (PCM_SINK_SAMPLE_BUFFER_SIZE_MASK -
-            ((inst->write_idx - inst->read_idx) & PCM_SINK_SAMPLE_BUFFER_SIZE_MASK));
+    return (PCM_SINK_SAMPLE_BUFFER_SIZE - (inst->write_idx - inst->read_idx));
 }
 
 /* Returns the current buffer utilization, in samples. */
 static uint32_t buffer_used(struct pcm_sink *inst)
 {
-    return ((inst->write_idx - inst->read_idx) & PCM_SINK_SAMPLE_BUFFER_SIZE_MASK);
+    return (inst->write_idx - inst->read_idx);
 }
 
 /* Output thread. Writes data from the intermediate buffer into
@@ -74,9 +73,8 @@ static void *output_thread(void *arg)
 
         /* Copy out one chunk. */
         for (i = 0; i < PCM_SINK_OUTPUT_CHUNK_SIZE; i++) {
-            tmp[i] = inst->buffer[inst->read_idx];
+            tmp[i] = inst->buffer[inst->read_idx & PCM_SINK_SAMPLE_BUFFER_SIZE_MASK];
             inst->read_idx++;
-            inst->read_idx &= PCM_SINK_SAMPLE_BUFFER_SIZE_MASK;
         }
 
         pthread_mutex_unlock(&inst->lock);
@@ -306,9 +304,8 @@ void pcm_sink_process(struct pcm_sink *inst, uint8_t *data)
     }
 
     for (i = 0; i < will_queue; i++) {
-        inst->buffer[inst->write_idx] = inst->tmp_output_buf[i];
+        inst->buffer[inst->write_idx & PCM_SINK_SAMPLE_BUFFER_SIZE_MASK] = inst->tmp_output_buf[i];
         inst->write_idx++;
-        inst->write_idx &= PCM_SINK_SAMPLE_BUFFER_SIZE_MASK;
     }
 
     pthread_mutex_unlock(&inst->lock);

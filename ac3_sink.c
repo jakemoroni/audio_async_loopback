@@ -33,14 +33,13 @@
 /* Returns the number of space available, in samples. */
 static uint32_t buffer_space_avail(struct ac3_sink *inst)
 {
-    return (AC3_SINK_SAMPLE_BUFFER_SIZE_MASK -
-            ((inst->write_idx - inst->read_idx) & AC3_SINK_SAMPLE_BUFFER_SIZE_MASK));
+    return (AC3_SINK_SAMPLE_BUFFER_SIZE - (inst->write_idx - inst->read_idx));
 }
 
 /* Returns the current buffer utilization, in samples. */
 static uint32_t buffer_used(struct ac3_sink *inst)
 {
-    return ((inst->write_idx - inst->read_idx) & AC3_SINK_SAMPLE_BUFFER_SIZE_MASK);
+    return (inst->write_idx - inst->read_idx);
 }
 
 /* Output thread. Writes data from the intermediate buffer into
@@ -70,9 +69,8 @@ static void *output_thread(void *arg)
 
         /* Copy out one chunk. */
         for (i = 0; i < AC3_SINK_OUTPUT_CHUNK_SIZE; i++) {
-            tmp[i] = inst->buffer[inst->read_idx];
+            tmp[i] = inst->buffer[inst->read_idx & AC3_SINK_SAMPLE_BUFFER_SIZE_MASK];
             inst->read_idx++;
-            inst->read_idx &= AC3_SINK_SAMPLE_BUFFER_SIZE_MASK;
         }
 
         pthread_mutex_unlock(&inst->lock);
@@ -379,34 +377,28 @@ void ac3_sink_process(struct ac3_sink *inst, uint8_t *data, size_t len)
     for (i = 0; i < inst->src_data.output_frames_gen; i++) {
 
         /* Front left. */
-        inst->buffer[inst->write_idx] = inst->tmp_output_buf[0][i];
+        inst->buffer[inst->write_idx & AC3_SINK_SAMPLE_BUFFER_SIZE_MASK] = inst->tmp_output_buf[0][i];
         inst->write_idx++;
-        inst->write_idx &= AC3_SINK_SAMPLE_BUFFER_SIZE_MASK;
 
         /* Front right. */
-        inst->buffer[inst->write_idx] = inst->tmp_output_buf[1][i];
+        inst->buffer[inst->write_idx & AC3_SINK_SAMPLE_BUFFER_SIZE_MASK] = inst->tmp_output_buf[1][i];
         inst->write_idx++;
-        inst->write_idx &= AC3_SINK_SAMPLE_BUFFER_SIZE_MASK;
 
         /* Center. */
-        inst->buffer[inst->write_idx] = inst->tmp_output_buf[2][i];
+        inst->buffer[inst->write_idx & AC3_SINK_SAMPLE_BUFFER_SIZE_MASK] = inst->tmp_output_buf[2][i];
         inst->write_idx++;
-        inst->write_idx &= AC3_SINK_SAMPLE_BUFFER_SIZE_MASK;
 
         /* LFE. */
-        inst->buffer[inst->write_idx] = inst->tmp_output_buf[3][i];
+        inst->buffer[inst->write_idx & AC3_SINK_SAMPLE_BUFFER_SIZE_MASK] = inst->tmp_output_buf[3][i];
         inst->write_idx++;
-        inst->write_idx &= AC3_SINK_SAMPLE_BUFFER_SIZE_MASK;
 
         /* Rear left. */
-        inst->buffer[inst->write_idx] = inst->tmp_output_buf[4][i];
+        inst->buffer[inst->write_idx & AC3_SINK_SAMPLE_BUFFER_SIZE_MASK] = inst->tmp_output_buf[4][i];
         inst->write_idx++;
-        inst->write_idx &= AC3_SINK_SAMPLE_BUFFER_SIZE_MASK;
 
         /* Rear right. */
-        inst->buffer[inst->write_idx] = inst->tmp_output_buf[5][i];
+        inst->buffer[inst->write_idx & AC3_SINK_SAMPLE_BUFFER_SIZE_MASK] = inst->tmp_output_buf[5][i];
         inst->write_idx++;
-        inst->write_idx &= AC3_SINK_SAMPLE_BUFFER_SIZE_MASK;
     }
 
     pthread_mutex_unlock(&inst->lock);
