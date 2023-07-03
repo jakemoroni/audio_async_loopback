@@ -179,7 +179,12 @@ void ac3_sink_open(struct ac3_sink *inst, uint32_t latency_us)
     pthread_cond_init(&inst->cond, NULL);
 
     /* Open decoder context. */
+#ifdef FFMPEG_OLD_AUDIO_API
+    inst->packet = malloc(sizeof(AVPacket));
+    av_init_packet(inst->packet);
+#else
     inst->packet = av_packet_alloc();
+#endif
     inst->frame = av_frame_alloc();
 
     /* TODO - Handle all of these failure cases. */
