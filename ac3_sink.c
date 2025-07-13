@@ -333,13 +333,13 @@ void ac3_sink_process(struct ac3_sink *inst, uint8_t *data, size_t len)
     }
 #endif
 
-    if (inst->frame->channels != 6) {
+    if (inst->frame->ch_layout.nb_channels != 6) {
         /* Only 5.1 is supported for now. This is mainly because I don't
          * handle all of the other channel mappings yet. I suppose this
          * could be fixed by defining all of the possible mappings and
          * using a lookup table with different ring buffer write routines.
          */
-        printf("Only 5.1 is supported right now (channels = %d)\n", inst->frame->channels);
+        printf("Only 5.1 is supported right now (channels = %d)\n", inst->frame->ch_layout.nb_channels);
         return;
     }
 
