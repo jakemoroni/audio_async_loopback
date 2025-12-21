@@ -273,7 +273,6 @@ void ac3_sink_close(struct ac3_sink *inst)
         src_delete(inst->rate_converter[i]);
     }
 
-    avcodec_close(inst->cctx);
     avcodec_free_context(&inst->cctx);
     av_frame_free(&inst->frame);
 }
